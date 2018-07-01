@@ -16,6 +16,59 @@
 
 double g_time[2];
 
+struct CircleQueue
+{
+	int front, rear;
+	int capacity;
+	int *array;
+}
+
+struct CircleQueue* init(int size)
+{
+	struct CircleQueue* queue = malloc(sizeof(struct CircleQueue));
+
+	if(!queue)
+		return NULL;
+
+	q->capacity = size;
+	q->front = -1;
+	q->rear = -1;
+	q->array = malloc(q->capacity*sizeof(int));
+
+	if(!q->array)
+		return NULL;
+}
+
+void enqueue(struct CircleQueue* queue, int x)//produce
+{
+	if((queue->rear+1)%queue->capacity == q->front)
+	{
+		// queue full, block, wait
+	}
+	else
+	{
+		q->rear = (q->rear+1)%q->capacity;
+		q->array[q->rear] = x;
+		if(q->front == -1)
+			q->front = q->rear;
+	}
+}
+
+int dequeue(struct CircleQueue* queue)//consume
+{
+	int data;
+	if(q->front == -1)
+		return 0;
+	else
+	{
+		data = q->array[q->front];
+		if(q->front == q->rear)
+			q->front = q->rear = -1;
+		else
+			q->front = (q->front+1)%q->capacity;
+	}
+	return data;
+}
 
 int main(int argc, char *argv[])
 {
@@ -41,8 +94,8 @@ int main(int argc, char *argv[])
 	g_time[0] = (tv.tv_sec) + tv.tv_usec/1000000.;
 
 
-    gettimeofday(&tv, NULL);
-    g_time[1] = (tv.tv_sec) + tv.tv_usec/1000000.;
+    	gettimeofday(&tv, NULL);
+    	g_time[1] = (tv.tv_sec) + tv.tv_usec/1000000.;
 
     printf("System execution time: %.6lf seconds\n", \
             g_time[1] - g_time[0]);
