@@ -29,7 +29,7 @@ typedef struct
 	int max;
 } argument_t;
 
-circle_queue_t* init(int size);
+circle_queue_t* circle_queue_init(int size);
 void enqueue(circle_queue_t* queue, int x);
 int dequeue(circle_queue_t* queue);
 
@@ -47,9 +47,11 @@ circle_queue_t* buffer;
 void* produce(void* params)
 {
 	argument_t* argument = (argument_t*) params;
-	int value = argument->id;
+	int p_id = argument->id;
+	//printf("Producer thread %d created\n", p_id);
 	while(1)
 	{
+		//printf("Producing %d\n", p_id);
 		pthread_mutex_lock(&produce_mutex);
 		produce_count--;
 		if(produce_count < 0)
@@ -60,10 +62,10 @@ void* produce(void* params)
 		pthread_mutex_unlock(&produce_mutex);
 		sem_wait(&spaces);
 		pthread_mutex_lock(&buffer_mutex);
-		enqueue(buffer, value);
+		enqueue(buffer, p_id);
 		pthread_mutex_unlock(&buffer_mutex);
 		sem_post(&items);
-		value += argument->max;
+		p_id += argument->max;
 	}
 }
 
@@ -71,6 +73,7 @@ void* consume(void* params)
 {
 	argument_t* argument = (argument_t*) params;
 	int c_id = argument->id;
+	//printf("Consumer thread %d created\n", c_id);
 	while(1)
 	{
 		pthread_mutex_lock(&consume_mutex);
@@ -86,10 +89,11 @@ void* consume(void* params)
 		int result = dequeue(buffer);
 		pthread_mutex_unlock(&buffer_mutex);
 		sem_post(&spaces);
+		//printf("Consuming %d\n", result);
 		int squareroot = (int) sqrt(result);
 		if((squareroot * squareroot) == result)
 		{
-			printf("%d, %d, %d", c_id, result, squareroot);
+			printf("%d, %d, %d\n", c_id, result, squareroot);
 		}
 	}
 	
@@ -115,13 +119,15 @@ int main(int argc, char *argv[])
 	maxmsg = atoi(argv[2]); /* buffer size                */
 	num_p = atoi(argv[3]);  /* number of producers        */
 	num_c = atoi(argv[4]);  /* number of consumers        */
+	//printf("%d, %d, %d, %d\n", num, maxmsg, num_p, num_c);
 
+	produce_count = num;
 	/* Initialize mutexes, semaphores, and buffer */
 	pthread_mutex_init(&produce_mutex, NULL);
 	pthread_mutex_init(&consume_mutex, NULL);
 	pthread_mutex_init(&buffer_mutex, NULL);
-	semaphore_init(&items, 0, 0);
-	semaphore_init(&spaces, 0, maxmsg);
+	sem_init(&items, 0, 0);
+	sem_init(&spaces, 0, maxmsg);
 	buffer = circle_queue_init(maxmsg);
 
 	/* Allocate mem to pthread arrays */
@@ -132,7 +138,7 @@ int main(int argc, char *argv[])
 	gettimeofday(&tv, NULL);
 	g_time[0] = (tv.tv_sec) + tv.tv_usec/1000000.;
 
-	for(int i = 0; i < num_p; i++)
+	for(i = 0; i < num_p; i++)
 	{
 		argument_t* arg = malloc(sizeof(argument_t));
 		arg->id = i;
@@ -140,7 +146,7 @@ int main(int argc, char *argv[])
 		pthread_create(producer_thread_array + i, NULL, produce, (void*)arg);
 	}
 
-	for(int i = 0; i < num_c; i++)
+	for(i = 0; i < num_c; i++)
 	{
 		argument_t* arg = malloc(sizeof(argument_t));
 		arg->id = i;
@@ -148,13 +154,27 @@ int main(int argc, char *argv[])
 		pthread_create(consumer_thread_array + i, NULL, consume, (void*)arg);
 	}
 
+	for(i = 0; i < num_p; i++)
+	{
+		pthread_join(*producer_thread_array + i, NULL);
+	}
 
+	for(i = 0; i < num_c; i++)
+	{
+		pthread_join(*consumer_thread_array + i, NULL);
+	}
 	/* End Execution */
     	gettimeofday(&tv, NULL);
     	g_time[1] = (tv.tv_sec) + tv.tv_usec/1000000.;
 
     printf("System execution time: %.6lf seconds\n", \
             g_time[1] - g_time[0]);
+
+	pthread_mutex_destroy(&produce_mutex);
+	pthread_mutex_destroy(&consume_mutex);
+	pthread_mutex_destroy(&buffer_mutex);
+	sem_destroy(&items);
+	sem_destroy(&spaces);
 	exit(0);
 }
 
@@ -172,38 +192,39 @@ circle_queue_t* circle_queue_init(int size)
 
 	if(!q->array)
 		return NULL;
+	return q;
 }
 
 void enqueue(circle_queue_t* q, int x)//produce, protected
 {
-	if((q->rear+1)%q->capacity == q->front)
+	/* if((q->rear+1)%q->capacity == q->front)
 	{
 		// queue full, block, wait
 	}
 	else
-	{
-		q->rear = (q->rear+1)%q->capacity;
-		q->array[q->rear] = x;
-		if(q->front == -1)
-			q->front = q->rear;
-	}
+	{ */
+	q->rear = (q->rear+1)%q->capacity;
+	q->array[q->rear] = x;
+	if(q->front == -1)
+		q->front = q->rear;
+	// }
 }
 
 int dequeue(circle_queue_t* q)//consume, protected
 {
 	int data;
-	if(q->front == -1)
+	/* if(q->front == -1)
 	{
 		return 0;
 	}
 	else
-	{
-		data = q->array[q->front];
-		if(q->front == q->rear)
-			q->front = q->rear = -1;
-		else
-			q->front = (q->front+1)%q->capacity;
-	}
+	{ */
+	data = q->array[q->front];
+	if(q->front == q->rear)
+		q->front = q->rear = -1;
+	else
+		q->front = (q->front+1)%q->capacity;
+	// }
 	return data;
 }
 
