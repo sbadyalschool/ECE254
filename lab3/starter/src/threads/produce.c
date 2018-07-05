@@ -192,36 +192,23 @@ circle_queue_t* circle_queue_init(int size)
 	return q;
 }
 
-void enqueue(circle_queue_t* q, int x)//produce, protected
+void enqueue(circle_queue_t* q, int x)
 {
-	/* if((q->rear+1)%q->capacity == q->front)
-	{
-		// queue full, block, wait
-	}
-	else
-	{ */
 	q->rear = (q->rear+1)%q->capacity;
 	q->array[q->rear] = x;
 	if(q->front == -1)
 		q->front = q->rear;
-	// }
 }
 
-int dequeue(circle_queue_t* q)//consume, protected
+int dequeue(circle_queue_t* q)
 {
 	int data;
-	/* if(q->front == -1)
-	{
-		return 0;
-	}
-	else
-	{ */
+
 	data = q->array[q->front];
 	if(q->front == q->rear)
 		q->front = q->rear = -1;
 	else
 		q->front = (q->front+1)%q->capacity;
-	// }
 	return data;
 }
 
