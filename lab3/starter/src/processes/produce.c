@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
     gettimeofday(&tv, NULL);
 
     t2 = tv.tv_sec + tv.tv_usec/1000000.0;
-    printf("Exect time: %.6lf seconds\n", t2-t1);
+    printf("System execution time: %.6lf seconds\n", t2-t1);
 
     return 0;
 }
