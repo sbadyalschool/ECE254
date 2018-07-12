@@ -153,7 +153,7 @@ void consumer(int cid) {
             // check squareroot
             root = sqrt(pt);
             if (root*root == pt) {
-                printf("%d %d %d\n", cid, pt, root);
+                printf("%d, %d, %d\n", cid, pt, root);
             }
         }
     }
