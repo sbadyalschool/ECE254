@@ -45,47 +45,69 @@ circle_queue_t* buffer;
 
 void* produce(void* params)
 {
+	// get parameters from argument object
 	argument_t* argument = (argument_t*) params;
 	int value = argument->id;
 	int max = argument->max;
 	int num = argument->num_pc;
+	// continuous producing loop
 	while(1)
 	{
+		// if next value to be produced greater than specified max
 		if(value >= max)
 		{
+			// free pointer and exit
 			free(argument);
 			pthread_exit(NULL);
 		}
+		// wait for space in global buffer
 		sem_wait(&spaces);
+		// lock buffer mutex before enqueuing
 		pthread_mutex_lock(&buffer_mutex);
 		enqueue(buffer, value);
+
+		//unlock buffer mutex and signal that item is added
 		pthread_mutex_unlock(&buffer_mutex);
 		sem_post(&items);
+		
+		// prepare next value
 		value += num;
 	}
 }
 
 void* consume(void* params)
 {
+	// get parameters from argument object
 	argument_t* argument = (argument_t*) params;
 	int c_id = argument->id;
 	int max = argument->max;
+	// continuous consuming loop
 	while(1)
 	{
+		// lock consumer mutex to increment number of items consumed
 		pthread_mutex_lock(&consume_mutex);
 		consume_count++;
+		// check if consumed count exceeds max number to be produced specified
 		if(consume_count > max)
 		{
+			// unlock mutex, free pointer, exit thread
 			pthread_mutex_unlock(&consume_mutex);
 			free(argument);
 			pthread_exit(NULL);
 		}
+		// unlock mutex and proceed to consume item
 		pthread_mutex_unlock(&consume_mutex);
+		// wait for item in queue
 		sem_wait(&items);
+		// lock buffer mutex
 		pthread_mutex_lock(&buffer_mutex);
+		// dequeue and get item
 		int result = dequeue(buffer);
+		// unlock buffer mutex and signal that space present in buffer
 		pthread_mutex_unlock(&buffer_mutex);
 		sem_post(&spaces);
+
+		// check if result is perfect square, print if yes
 		int squareroot = (int) sqrt(result);
 		if((squareroot * squareroot) == result)
 		{
@@ -131,6 +153,7 @@ int main(int argc, char *argv[])
 	gettimeofday(&tv, NULL);
 	g_time[0] = (tv.tv_sec) + tv.tv_usec/1000000.;
 
+	// Create arguments, and create producer threads
 	for(i = 0; i < num_p; i++)
 	{
 		argument_t* arg = malloc(sizeof(argument_t));
@@ -140,6 +163,7 @@ int main(int argc, char *argv[])
 		pthread_create(producer_thread_array + i, NULL, produce, (void*)arg);
 	}
 
+	// Create arguments, and create consumer threads
 	for(i = 0; i < num_c; i++)
 	{
 		argument_t* arg = malloc(sizeof(argument_t));
@@ -148,6 +172,7 @@ int main(int argc, char *argv[])
 		pthread_create(consumer_thread_array + i, NULL, consume, (void*)arg);
 	}
 
+	// Wait for and join producer and consumer threads
 	for(i = 0; i < num_p; i++)
 	{
 		pthread_join(*(producer_thread_array + i), NULL);
@@ -164,6 +189,7 @@ int main(int argc, char *argv[])
     printf("System execution time: %.6lf seconds\n", \
             g_time[1] - g_time[0]);
 
+	// Destroy mutexes and semaphores, and free memory
 	pthread_mutex_destroy(&consume_mutex);
 	pthread_mutex_destroy(&buffer_mutex);
 	sem_destroy(&items);
@@ -174,6 +200,8 @@ int main(int argc, char *argv[])
 	free(buffer);
 	exit(0);
 }
+
+// Helper circular queue functions
 
 circle_queue_t* circle_queue_init(int size)
 {
