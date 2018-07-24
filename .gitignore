@@ -49,3 +49,4 @@ manual/*.toc
 *svc_table._ia
 
 lab3/starter/lab3/produce
+lab3/starter/src/.vscode/settings.json

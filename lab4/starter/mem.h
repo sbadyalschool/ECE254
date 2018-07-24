@@ -10,6 +10,16 @@
 
 #include <stddef.h>
 
+/* custom structs */
+typedef struct worst_fit_node_t worst_fit_node_t;
+
+struct worst_fit_node_t{
+    unsigned char allocated;
+    unsigned short block_size;
+	worst_fit_node_t* next;
+	worst_fit_node_t* previous;
+};
+
 /* memory initializers */
 int best_fit_memory_init(size_t size);
 int worst_fit_memory_init(size_t size);
