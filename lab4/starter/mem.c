@@ -25,7 +25,7 @@ void* b_mem_box;
 /* memory initializer */
 int best_fit_memory_init(size_t size)
 {
-	if(size < (sizeof(memory_list_node_t) + 4))
+	if(size <= sizeof(memory_list_node_t))
 		return -1;
 	best_fit_block_list = (memory_list_node_t*) malloc(size);
 	if(!best_fit_block_list)
@@ -41,7 +41,7 @@ int best_fit_memory_init(size_t size)
 
 int worst_fit_memory_init(size_t size)
 {
-	if(size < (sizeof(memory_list_node_t) + 4))
+	if(size <= sizeof(memory_list_node_t))
 		return -1;
 	worst_fit_block_list = (memory_list_node_t*) malloc(size);
 	if(!worst_fit_block_list)
@@ -191,7 +191,7 @@ void best_fit_dealloc(void *ptr)
 
 void worst_fit_dealloc(void *ptr)
 {
-	memory_list_node_t* dealloc_node = (memory_list_node_t*)ptr;
+	memory_list_node_t* dealloc_node = (memory_list_node_t*)(ptr - sizeof(memory_list_node_t));
 	memory_list_node_t* prev = dealloc_node->previous;
 	memory_list_node_t* next = dealloc_node->next;
 	if(prev != NULL && prev->allocated == 0)
@@ -232,7 +232,7 @@ int best_fit_count_extfrag(size_t size)
 {
 	if(size <= 0)
 		return -1;
-	int count = 0;
+	int count = 0; 
 	memory_list_node_t* iterator = best_fit_block_list;
 	while(iterator != NULL)
 	{
@@ -253,7 +253,9 @@ int worst_fit_count_extfrag(size_t size)
 	while(iterator != NULL)
 	{
 		if(iterator->allocated == 0 && iterator->block_size < size)
+		{
 			count++;
+		}
 		iterator = iterator->next;
 	}
 	// To be completed by students

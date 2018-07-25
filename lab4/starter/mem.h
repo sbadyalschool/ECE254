@@ -14,8 +14,8 @@
 typedef struct memory_list_node_t memory_list_node_t;
 
 struct memory_list_node_t{
-    unsigned char allocated;
-    unsigned short block_size;
+    unsigned short allocated;
+    unsigned int block_size;
 	memory_list_node_t* next;
 	memory_list_node_t* previous;
 };
